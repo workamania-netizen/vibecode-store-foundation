@@ -97,7 +97,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Variant selector + price + add to cart */}
             <div className="mt-8">
-              <VariantSelector variants={product.variants} />
+              <VariantSelector product={product} />
             </div>
 
             {/* Shipping note */}

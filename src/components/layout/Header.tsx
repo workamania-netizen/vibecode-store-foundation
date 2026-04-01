@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import storeConfig from "@/config/store";
 import MobileNav from "./MobileNav";
+import CartIcon from "@/components/cart/CartIcon";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,9 +32,9 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Cart icon placeholder + mobile menu button */}
+        {/* Cart icon + mobile menu button */}
         <div className="flex items-center gap-4">
-          {/* Cart icon will be added in Phase 4 */}
+          <CartIcon />
 
           {/* Mobile menu toggle */}
           <button

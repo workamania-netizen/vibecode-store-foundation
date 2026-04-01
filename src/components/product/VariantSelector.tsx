@@ -1,19 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import type { ProductVariant } from "@/config/store";
+import type { Product, ProductVariant } from "@/config/store";
+import { useCart } from "@/context/CartContext";
 
 interface VariantSelectorProps {
-  variants: ProductVariant[];
+  product: Product;
 }
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export default function VariantSelector({ variants }: VariantSelectorProps) {
+export default function VariantSelector({ product }: VariantSelectorProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const selected = variants[selectedIndex];
+  const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
+
+  const selected: ProductVariant = product.variants[selectedIndex];
+
+  function handleAddToCart() {
+    addItem({
+      productSlug: product.slug,
+      variantSku: selected.sku,
+      name: product.name,
+      variantName: selected.name,
+      price: selected.price,
+      image: product.images[0],
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  }
 
   return (
     <div>
@@ -24,10 +41,13 @@ export default function VariantSelector({ variants }: VariantSelectorProps) {
       <select
         id="variant-select"
         value={selectedIndex}
-        onChange={(e) => setSelectedIndex(Number(e.target.value))}
+        onChange={(e) => {
+          setSelectedIndex(Number(e.target.value));
+          setAdded(false);
+        }}
         className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-dark shadow-sm focus:border-primary focus:ring-1 focus:ring-primary"
       >
-        {variants.map((variant, i) => (
+        {product.variants.map((variant, i) => (
           <option key={variant.sku} value={i}>
             {variant.name} — {formatPrice(variant.price)}
           </option>
@@ -41,12 +61,18 @@ export default function VariantSelector({ variants }: VariantSelectorProps) {
         </span>
       </div>
 
-      {/* Add to cart button placeholder — wired up in Phase 4 */}
+      {/* Add to cart button */}
       <button
         type="button"
+        onClick={handleAddToCart}
+        disabled={!product.inStock}
         className="mt-6 w-full rounded-lg bg-primary px-6 py-3 text-base font-medium text-white transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Add to Cart
+        {!product.inStock
+          ? "Sold Out"
+          : added
+            ? "Added to Cart!"
+            : "Add to Cart"}
       </button>
     </div>
   );
