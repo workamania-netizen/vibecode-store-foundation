@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { rateLimit } from "@/lib/rate-limit";
 import storeConfig from "@/config/store";
 
 interface CheckoutItem {
@@ -17,6 +18,21 @@ interface CheckoutItem {
 }
 
 export async function POST(request: NextRequest) {
+  // ── Rate limiting ──────────────────────────────────────────────────
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown";
+  const { allowed, retryAfterSeconds } = rateLimit(`checkout:${ip}`);
+
+  if (!allowed) {
+    return NextResponse.json(
+      {
+        error: `Too many requests. Please try again in ${Math.ceil(retryAfterSeconds / 60)} minutes.`,
+      },
+      { status: 429 }
+    );
+  }
+
   // ── Check Stripe is configured ──────────────────────────────────────
   const stripe = getStripe();
   if (!stripe) {
