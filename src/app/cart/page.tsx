@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import CartItemRow from "@/components/cart/CartItem";
@@ -11,6 +12,43 @@ function formatPrice(cents: number): string {
 
 export default function CartPage() {
   const { items, isHydrated, totalPrice, clearCart } = useCart();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function handleCheckout() {
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            productSlug: item.productSlug,
+            variantSku: item.variantSku,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setCheckoutError(data.error || "Checkout failed. Please try again.");
+        setCheckoutLoading(false);
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setCheckoutError("Something went wrong. Please try again.");
+      setCheckoutLoading(false);
+    }
+  }
 
   if (!isHydrated) {
     return (
@@ -121,12 +159,19 @@ export default function CartPage() {
               </p>
             )}
 
-            {/* Checkout button — wired up in Phase 5 */}
+            {checkoutError && (
+              <p className="mt-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-600">
+                {checkoutError}
+              </p>
+            )}
+
             <button
               type="button"
-              className="mt-6 w-full rounded-lg bg-primary px-6 py-3 text-base font-medium text-white transition-colors hover:bg-secondary"
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="mt-6 w-full rounded-lg bg-primary px-6 py-3 text-base font-medium text-white transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Proceed to Checkout
+              {checkoutLoading ? "Redirecting..." : "Proceed to Checkout"}
             </button>
 
             <Link
