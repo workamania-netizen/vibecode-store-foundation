@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { compile, run } from "@mdx-js/mdx";
 import * as runtime from "react/jsx-runtime";
 import { getAllSlugs, getPostBySlug } from "@/lib/blog";
+import { blogPostingJsonLd, breadcrumbJsonLd } from "@/lib/json-ld";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -44,8 +45,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     baseUrl: import.meta.url,
   });
 
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog" },
+    { name: post.title, url: `/blog/${post.slug}` },
+  ];
+
   return (
     <article className="px-4 py-16 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(blogPostingJsonLd(post)),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd(breadcrumbItems)),
+        }}
+      />
       <div className="mx-auto max-w-3xl">
         {/* Back link */}
         <Link

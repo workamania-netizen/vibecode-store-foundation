@@ -3,6 +3,7 @@ import storeConfig from "@/config/store";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { CartProvider } from "@/context/CartContext";
+import { organizationJsonLd } from "@/lib/json-ld";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -44,6 +45,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" style={getColorCSSVariables()}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd()),
+          }}
+        />
+      </head>
       <body className="flex min-h-screen flex-col">
         <CartProvider>
           <Header />

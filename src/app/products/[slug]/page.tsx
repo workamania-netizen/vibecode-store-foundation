@@ -4,6 +4,7 @@ import Link from "next/link";
 import storeConfig from "@/config/store";
 import ProductGallery from "@/components/product/ProductGallery";
 import VariantSelector from "@/components/product/VariantSelector";
+import { productJsonLd, breadcrumbJsonLd } from "@/lib/json-ld";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -44,8 +45,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
     (c) => c.slug === product.category
   );
 
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Products", url: "/products" },
+    ...(category
+      ? [{ name: category.name, url: `/products?category=${category.slug}` }]
+      : []),
+    { name: product.name, url: `/products/${product.slug}` },
+  ];
+
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd(product)),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd(breadcrumbItems)),
+        }}
+      />
       <div className="mx-auto max-w-7xl">
         {/* Breadcrumb */}
         <nav className="mb-8 text-sm text-gray-500">
