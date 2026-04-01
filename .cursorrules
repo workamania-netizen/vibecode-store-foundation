@@ -1,0 +1,96 @@
+# Cursor Rules — Vibecode Store Foundation
+
+## What This Project Is
+
+A Next.js 15 ecommerce template for small businesses selling physical products. Config-driven — one TypeScript file (`src/config/store.ts`) controls all store data, products, colors, and content.
+
+Sample data: Martinsburg Honey Co. — a fictional honey shop in Martinsburg, WV with 10 products across 3 categories.
+
+<!-- CUSTOMIZE: When adapting for a different store, update store.ts with your business details, products, categories, and colors. -->
+
+## Critical Rules
+
+1. **Single source of truth: `src/config/store.ts`.** All business data (store name, products, categories, prices, colors, policies, contact reasons, testimonials, SEO) lives in this file. NEVER hardcode business data in components — always import `storeConfig` and read from it.
+
+2. **Prices are in cents.** All prices in config and Stripe are integers (e.g., 1495 = $14.95). Format to dollars only at display time: `(cents / 100).toFixed(2)`.
+
+3. **Server-side price validation.** The checkout API route (`src/app/api/checkout/route.ts`) looks up product prices from `storeConfig.products`. NEVER trust prices sent from the client. The client sends only `productSlug`, `variantSku`, and `quantity`.
+
+4. **No database.** Products are in the config file. Blog posts are MDX files in `content/blog/`. Cart state is React context + localStorage.
+
+5. **Color flow: config → CSS vars → Tailwind.** The 5 colors in `storeConfig.colors` are injected as CSS custom properties on `<html>` by `layout.tsx`, then mapped to Tailwind utilities via `@theme` in `globals.css`. Use `bg-primary`, `text-dark`, `bg-light`, etc.
+
+## Tech Stack
+
+- Next.js 15, App Router, TypeScript
+- Tailwind CSS v4 with CSS custom properties
+- Stripe hosted checkout (server-side session, client redirect)
+- Resend for email (console.log fallback if no API key)
+- MDX blog with gray-matter frontmatter
+- React context + localStorage for cart
+
+## File Structure Overview
+
+```
+src/config/store.ts          → THE config file (all business data)
+src/app/layout.tsx            → Root layout (CSS vars, CartProvider, Organization JSON-LD)
+src/app/page.tsx              → Homepage (Hero, Featured, About, Testimonials, CTA)
+src/app/products/page.tsx     → Product listing with category filter
+src/app/products/[slug]/      → Product detail pages (generateStaticParams)
+src/app/cart/page.tsx          → Shopping cart with checkout button
+src/app/contact/page.tsx       → Contact form + business info sidebar
+src/app/blog/page.tsx          → Blog listing
+src/app/blog/[slug]/page.tsx   → Blog post (MDX rendering)
+src/app/order-confirmation/    → Post-checkout success page
+src/app/policies/shipping/     → Shipping policy from config
+src/app/policies/returns/      → Returns policy from config
+src/app/api/checkout/route.ts  → Stripe checkout session creation
+src/app/api/contact/route.ts   → Contact form submission handler
+src/app/api/webhook/stripe/    → Stripe webhook handler
+src/context/CartContext.tsx     → Cart state (useReducer + localStorage + isHydrated)
+src/lib/stripe.ts              → Stripe client singleton
+src/lib/blog.ts                → MDX reader (getAllPosts, getPostBySlug, getAllSlugs)
+src/lib/json-ld.ts             → JSON-LD generators
+src/lib/rate-limit.ts          → Rate limiter (5/hr per IP)
+src/lib/sanitize.ts            → Input sanitization
+src/lib/cart-storage.ts        → localStorage helpers for cart
+content/blog/*.mdx             → Blog posts with frontmatter
+public/images/                 → SVG placeholders for products, categories, blog, hero
+```
+
+## Component Patterns
+
+- `src/components/ui/` — Reusable primitives: `Button` (polymorphic link/button, 3 variants, 3 sizes), `Card`, `SectionHeading`, `StarRating`
+- `src/components/layout/` — `Header` (sticky, CartIcon, mobile toggle), `Footer` (4-column), `MobileNav`
+- `src/components/home/` — Homepage sections: `HeroSection`, `FeaturedProducts`, `AboutPreview`, `TestimonialsSection`, `CTASection`
+- `src/components/product/` — `ProductCard` (listing card), `ProductGallery` (image display), `VariantSelector` (dropdown + add to cart)
+- `src/components/cart/` — `CartIcon` (header badge), `CartItem` (line item with qty controls)
+- `src/components/contact/` — `ContactForm` (with contactReasons dropdown from config, honeypot)
+
+## Common Customization Tasks
+
+- **Add product:** Add entry to `storeConfig.products` array in `src/config/store.ts`, add image to `public/images/products/`
+- **Add category:** Add entry to `storeConfig.categories` array, products reference by `slug`
+- **Change colors:** Edit `storeConfig.colors` (5 hex values) — entire site re-themes
+- **Add blog post:** Create `content/blog/your-slug.mdx` with frontmatter, add image to `public/images/blog/`
+- **Change contact reasons:** Edit `storeConfig.contactReasons` array
+- **Update policies:** Edit `storeConfig.shipping` or `storeConfig.returns`
+
+## Security
+
+- Rate limiting on contact form (5 requests/hour per IP)
+- Input sanitization (HTML stripping, length limits)
+- Honeypot field on contact form
+- Stripe webhook signature verification
+- Server-side price validation on checkout
+- CSP headers allowing Stripe domains (`js.stripe.com`, `api.stripe.com`, `hooks.stripe.com`)
+- HSTS, X-Frame-Options, X-Content-Type-Options
+
+## Don't Do
+
+- Don't add a database — the config file IS the data layer
+- Don't build a custom payment form — Stripe hosted checkout avoids PCI scope
+- Don't install state management libraries — React context is sufficient for the cart
+- Don't hardcode any business-specific text in components
+- Don't trust client-sent prices in API routes
+- Don't store API keys in code — use `.env.local`
